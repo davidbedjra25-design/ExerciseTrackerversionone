@@ -6,6 +6,7 @@ import ca.umanitoba.comp2450.exercisetracker.model.Map;
 import ca.umanitoba.comp2450.exercisetracker.output.MapPrinter;
 import ca.umanitoba.comp2450.exercisetracker.output.SwimmerPrinter;
 import com.google.common.base.Preconditions;
+import ca.umanitoba.comp2450.exercisetracker.model.TrackerManager;
 
 import java.util.*;
 
