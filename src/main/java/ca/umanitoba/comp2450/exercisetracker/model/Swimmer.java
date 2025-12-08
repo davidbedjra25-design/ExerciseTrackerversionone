@@ -13,8 +13,8 @@ public class Swimmer {
     private String username;
     private Set<GearType> gears;
     private int distance;//total distance
-    private Map map;
     private ArrayList<Activity> activities;
+    private Set<Swimmer> following;
 
     //Defining our constructor
     private Swimmer(String username) {
@@ -25,6 +25,7 @@ public class Swimmer {
         this.gears = new HashSet<>();
         this.activities = new ArrayList<>();
         this.distance = 0;
+        this.following = new HashSet<>();
         //Postcondition for constructor: This instance is in a valid state.
         checkSwimmer();
     }
@@ -65,22 +66,6 @@ public class Swimmer {
         //Postcondition: this instance of swimmer must be valid just before returning the mutator
     }
 
-    //defining a method for the add map function
-    public void addMap(Map newMap) {
-        //One precondition: newMap should not be null.
-        Preconditions.checkNotNull(newMap, "newMap should not be null.");
-        this.map = newMap;
-        //One postcondition: this instance of swimmer must be valid after adding the map
-        checkSwimmer();
-    }
-
-    public void removeMap() {
-        //One precondition: This instance of swimmer should be in a valid state before removing the map
-        checkSwimmer();
-        this.map = null;
-        checkSwimmer();
-    }
-
     //defining a getter method for distance
     public int getDistance() {
         //One precondition: This instance of swimmer should be in a valid state before returning the distance.
@@ -117,11 +102,23 @@ public class Swimmer {
         return gears;
     }
 
+    public void follow(Swimmer other) {
+        Preconditions.checkNotNull(other, "The other swimmer should not be null.");
+        if(!other.equals(this)) {
+            following.add(other);
+        }
+    }
+
+    public Set<Swimmer> getFollowing() {
+        return following;
+    }
+
     //method for precondition and postcondition to check for a valid state of swimmer
     private void checkSwimmer() {
         Preconditions.checkNotNull(username, "Username should never be null.");
         Preconditions.checkState(!username.isEmpty(), "Username should have at least one symbol.");
         Preconditions.checkState(distance >= 0, "Distance should never be negative.");
+        Preconditions.checkNotNull(following, "following should not be null.");
         Preconditions.checkNotNull(activities, "Activities should never be null.");
         for(Activity activity : activities) {
             Preconditions.checkNotNull(activity, "Individual activities should never be null.");

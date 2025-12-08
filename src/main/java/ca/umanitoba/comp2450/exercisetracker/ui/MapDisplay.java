@@ -16,15 +16,14 @@ public class MapDisplay {
     //instance variables
     //input source for all user commands
     private Scanner keyboard;
-    //Current map being used
-    private Map map;
-    //The single swimmer associated with this UI session.
-    private Swimmer swimmer;
+    //The current swimmer signed in.
+    private Swimmer currentSwimmer;
+    private TrackerManager manager;
 
     //defining the constructor
     public MapDisplay() {
         this.keyboard = new  Scanner(System.in);
-        swimmer = createSwimmer();
+        this.manager = new TrackerManager();
     }
 
     //defining a method to create the swimmer object
@@ -53,50 +52,78 @@ public class MapDisplay {
         } while(username == null);
     }
 
-    //defining a method to get the width of the map from the user
-    private void getMapWidth(Map.MapBuilder builder) {
-        Preconditions.checkNotNull(builder, "builder should not be null.");
-        int width = -1;
 
-        do {
-            System.out.println("Enter the width of the map:");
-            width = keyboard.nextInt();
-
-            try {
-                builder.width(width);
+    public void start() {
+        boolean systemRunning = true;
+        while (systemRunning) {
+            if (currentSwimmer == null) {
+                systemRunning = showLoginMenu();
             }
-            catch(Exception e) {
-                System.out.println("The width must be a positive whole number.");
-                width = -1;
+            else {
+                boolean signedIn = displayUserOptions();
+                if(!signedIn) {
+                    currentSwimmer = null;
+                }
             }
-        } while(width == -1);
+        }
     }
 
-    //defining a method to get the height of the map from the user
-    private void getMapHeight(Map.MapBuilder builder) {
-        Preconditions.checkNotNull(builder, "Builder should not be null.");
-        int height = -1;
+    private boolean showLoginMenu() {
+        System.out.println("1. Login");
+        System.out.println("2. Create New Profile");
+        System.out.println("3. Exit System");
 
-        do {
-            System.out.println("Enter the height of the map:");
-            height = keyboard.nextInt();
-            try {
-                builder.height(height);
-            }
-            catch(Exception e) {
-                System.out.println("The height must be a positive whole number.");
-                height = -1;
-            }
-        } while(height == -1);
+        int choice = keyboard.nextInt();
+        keyboard.nextLine();
+
+        switch(choice) {
+            case 1:
+                performLogin();
+                break;
+            case 2:
+                performRegistration();
+                break;
+            case 3:
+                exit();
+                break;
+            default:
+                System.out.println("Invalid option.");
+        }
+        return true;
+    }
+
+    private void performLogin() {
+        System.out.println("Enter username: ");
+        String username = keyboard.nextLine();
+        Swimmer swimmer = manager.loginUser(username);
+        if(swimmer != null) {
+            currentSwimmer = swimmer;
+            System.out.println("Welcome " + swimmer.getUsername());
+        }
+        else {
+            System.out.println("User not found.");
+        }
+    }
+
+    private void performRegistration() {
+        System.out.print("Choose a username: ");
+        String username = keyboard.nextLine();
+        try {
+            currentSwimmer = manager.registerUser(username);
+            System.out.println("You have successfully created a profile. You are now logged in.");
+        }
+        catch(Exception e) {
+            System.out.println("Error creating profile: " + e.getMessage());
+        }
     }
 
     /**
      * Shows the main menu and executes the action corresponding to the selected number.
      * @return true to continue, false otherwise
      */
-    public boolean displayOptions() {
+    public boolean displayUserOptions() {
         System.out.println("What would you like to do?");
-        String[] options = {"Add gear", "Add map", "Add obstacle", "Add activity", "Show map", "Show gear", "Show obstacles", "Show activities", "Show activitiy", "Remove gear", "Remove activity", "Remove obstacle", "Remove map", "Exit"};
+        String[] options = {"Add gear", "Add obstacle", "Add activity Manually", "Find new path", "Add duplicate activity", "Show map", "Show gear", "Show obstacles", "Show activities", "Show activity", "View feed", "Follow", "Remove gear", "Remove activity", "Remove obstacle", "Remove map", "Log out"};
         String s = "";
         for(int i = 0; i < options.length; i++) {
             if(i == options.length - 1) {
@@ -113,61 +140,43 @@ public class MapDisplay {
         keyboard.nextLine();
         switch(option) {
             case 1 -> addGear();
-            case 2 -> addMap();
-            case 3 -> addObstacle();
-            case 4 -> addActivity();
-            case 5 -> showMap();
-            case 6 -> showGear();
-            case 7 -> showObstacles();
-            case 8 -> showActivities();
-            case 9 -> showActivity();
-            case 10 -> removeGear();
-            case 11 -> removeActivity();
-            case 12 -> removeObstacle();
-            case 13 -> removeMap();
-            case 14 -> exit();
+            case 2 -> addObstacle();
+            case 3 -> addActivityManually();
+            case 4 -> addDuplicateActivity();
+            case 5 -> findNewPath();
+            case 6 -> showMap();
+            case 7 -> showGear();
+            case 8 -> showObstacles();
+            case 9 -> showActivities();
+            case 10 -> showActivity();
+            case 11 -> viewFeed();
+            case 12 -> followUser();
+            case 13 -> removeGear();
+            case 14 -> removeActivity();
+            case 15 -> removeObstacle();
+            case 16 -> logOut();
             default -> System.out.println("Invalid option.");
         }
         return true;
     }
 
     /**
-     * adds a map
-     */
-    private void addMap() {
-        System.out.print("Please enter the width of the map:");
-        int width = keyboard.nextInt();
-        System.out.print("Please enter the height of the map:");
-        int height = keyboard.nextInt();
-
-        map = new Map.MapBuilder().width(width).height(height).build();
-        System.out.println("You have created a map of size " + width + "x" + height + ".");
-        swimmer.addMap(map);
-    }
-
-    /**
      * displays an ASCII grid to the user containing the map info
      */
     private void showMap() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
-
-        int width = map.getWidth();
-        int height = map.getHeight();
-
+        Map map = manager.getWorldMap();
         map.createGrid();
+
         char[][] grid = map.getGrid();
-        if(!swimmer.getActivities().isEmpty()) {
-            for(Activity activity : swimmer.getActivities()) {
+        if(!currentSwimmer.getActivities().isEmpty()) {
+            for(Activity activity : currentSwimmer.getActivities()) {
                 displayActivityOnMap(activity);
             }
         }
         MapPrinter mapPrinter = new MapPrinter(map);
         mapPrinter.printGrid();
         mapPrinter.printLegend();
-        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(swimmer);
+        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(currentSwimmer);
         swimmerPrinter.showTotalDistance();
     }
 
@@ -179,19 +188,19 @@ public class MapDisplay {
         int choice = keyboard.nextInt();
         switch(choice) {
             case 1 :
-                if(swimmer.getGears().contains(GearType.OXYGEN_TANK)) {
+                if(currentSwimmer.getGears().contains(GearType.OXYGEN_TANK)) {
                     System.out.println("You have already added an Oxygen Tank.");
                     return;
                 }
-                swimmer.addGear(GearType.OXYGEN_TANK);
+                currentSwimmer.addGear(GearType.OXYGEN_TANK);
                 System.out.println("Oxygen Tank has been added.");
                 break;
             case 2 :
-                if(swimmer.getGears().contains(GearType.SNORKEL)) {
+                if(currentSwimmer.getGears().contains(GearType.SNORKEL)) {
                     System.out.println("You have already added an Snorkel.");
                     return;
                 }
-                swimmer.addGear(GearType.SNORKEL);
+                currentSwimmer.addGear(GearType.SNORKEL);
                 System.out.println("Snorkel has been added.");
                 break;
             default :
@@ -203,7 +212,7 @@ public class MapDisplay {
      * shows the gear added to the user
      */
     private void showGear() {
-        SwimmerPrinter printer = new SwimmerPrinter(swimmer);
+        SwimmerPrinter printer = new SwimmerPrinter(currentSwimmer);
         printer.showGears();
     }
 
@@ -211,10 +220,8 @@ public class MapDisplay {
      * adds an obstacle to the map.
      */
     private void addObstacle() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
+        Map map = manager.getWorldMap();
+
         System.out.println("Please, enter the x-coordinate of the obstacle:");
         int x = keyboard.nextInt();
         System.out.println("Please, enter the y-coordinate of the obstacle:");
@@ -238,11 +245,8 @@ public class MapDisplay {
     /**
      * adds an activity
      */
-    private void addActivity() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
+    private void addActivityManually() {
+        Map map = manager.getWorldMap();
 
         Activity tempActivity = createActivity();
         Route route = tempActivity.getRoute();
@@ -251,11 +255,10 @@ public class MapDisplay {
             pathFinder.createPath(map.getGrid());
         }
         else {
-            map.createGrid();
             pathFinder.createPath(map.getGrid());
         }
         Activity finalActivity = new Activity.ActivityBuilder().activityName(tempActivity.getActivityName()).route(route).build();
-        swimmer.addActivity(finalActivity);
+        currentSwimmer.addActivity(finalActivity);
         System.out.println("You have added a new activity.");
     }
 
@@ -270,7 +273,7 @@ public class MapDisplay {
 
     /**
      * gets the name of the activity from the user.
-     * @param builder The builder of the acrtivity class
+     * @param builder The builder of the activity class
      */
     public void getActivityNameInput(Activity.ActivityBuilder builder) {
         Preconditions.checkNotNull(builder, "builder should not be null.");
@@ -296,6 +299,7 @@ public class MapDisplay {
      * @param builder the builder of the activity class
      */
     public void getRouteInput(Activity.ActivityBuilder builder) {
+        Map map = manager.getWorldMap();
         Preconditions.checkNotNull(builder, "builder should not be null.");
         Route route = null;
         int startPositionX = -1;
@@ -339,6 +343,7 @@ public class MapDisplay {
      * @return true if the position is in the obstacle, false otherwise
      */
     private boolean isInObstacle(int x , int y) {
+        Map map = manager.getWorldMap();
         for(Obstacle obstacle : map.getObstacles()) {
             int obstacleX = obstacle.coordinates().getX();
             int obstacleY = obstacle.coordinates().getY();
@@ -357,10 +362,7 @@ public class MapDisplay {
      * shows the obstacles and their properties to the user
      */
     private void showObstacles() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
+        Map map = manager.getWorldMap();
         MapPrinter mapPrinter = new MapPrinter(map);
         mapPrinter.showObstacles();
     }
@@ -369,11 +371,7 @@ public class MapDisplay {
      * Displays a list of activities and the distance travelled for each one
      */
     private void showActivities() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
-        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(swimmer);
+        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(currentSwimmer);
         swimmerPrinter.showActivities();
     }
 
@@ -381,22 +379,19 @@ public class MapDisplay {
      * Displays the route of the activity on the map
      */
     private void showActivity() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
-        if(swimmer.getActivities().isEmpty()) {
+        Map map = manager.getWorldMap();
+        if(currentSwimmer.getActivities().isEmpty()) {
             System.out.println("No activities have been added yet.");
             return;
         }
 
         System.out.println("Select an activity to view:");
-        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(swimmer);
+        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(currentSwimmer);
         swimmerPrinter.showActivities();
         System.out.print("Select the activity by entering the number beside it:");
         int input = keyboard.nextInt();
         keyboard.nextLine();
-        ArrayList<Activity> activities = swimmer.getActivities();
+        ArrayList<Activity> activities = currentSwimmer.getActivities();
         if(input < 1 || input > activities.size()) {
             System.out.println("Invalid input.");
             return;
@@ -412,6 +407,7 @@ public class MapDisplay {
      * @param activity The activity being shown
      */
     private void displayActivityOnMap(Activity activity) {
+        Map map = manager.getWorldMap();
         ArrayList<Coordinates> path = activity.getRoute().getPath();
         char[][] grid = map.getGrid();
         for(Coordinates coordinates : path) {
@@ -423,22 +419,22 @@ public class MapDisplay {
      * removes the gear the user wants to remove
      */
     private void removeGear() {
-        if(swimmer.getGears().isEmpty()) {
+        if(currentSwimmer.getGears().isEmpty()) {
             System.out.println("You cannot add any gears as no gears have been added yet.");
             return;
         }
         System.out.println("Select the gear to remove:");
-        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(swimmer);
+        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(currentSwimmer);
         swimmerPrinter.showGears();
         System.out.print("Select the gear by entering the number beside it:");
         int input = keyboard.nextInt();
-        if(input < 1 || input > swimmer.getGears().size()) {
+        if(input < 1 || input > currentSwimmer.getGears().size()) {
             System.out.println("Invalid input.");
             return;
         }
 
-        ArrayList<GearType> gearList = new ArrayList<>(swimmer.getGears());
-        swimmer.removeGear(gearList.get(input - 1));
+        ArrayList<GearType> gearList = new ArrayList<>(currentSwimmer.getGears());
+        currentSwimmer.removeGear(gearList.get(input - 1));
         System.out.println("The gear has been removed.");
     }
 
@@ -446,10 +442,7 @@ public class MapDisplay {
      * Removes the obstacle the user wants to remove
      */
     private void removeObstacle() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
+        Map  map = manager.getWorldMap();
         if(map.getObstacles().isEmpty()) {
             System.out.println("You cannot remove any obstacles as there are no obstacles to remove.");
             return;
@@ -472,39 +465,26 @@ public class MapDisplay {
      * removes the activity the user wants to remove
      */
     private void removeActivity() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
-
-        if(swimmer.getActivities().isEmpty()) {
+        if(currentSwimmer.getActivities().isEmpty()) {
             System.out.println("No activities have been added yet.");
             return;
         }
 
         System.out.println("Select an activity to remove:");
-        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(swimmer);
+        SwimmerPrinter swimmerPrinter = new SwimmerPrinter(currentSwimmer);
         swimmerPrinter.showActivities();
         System.out.print("Select the activity by entering the number beside it:");
         int input = keyboard.nextInt();
-        if(input < 1 || input > swimmer.getActivities().size()) {
+        if(input < 1 || input > currentSwimmer.getActivities().size()) {
             System.out.println("Invalid input.");
             return;
         }
-        swimmer.removeActivity(swimmer.getActivities().get(input - 1));
+        currentSwimmer.removeActivity(currentSwimmer.getActivities().get(input - 1));
     }
 
-    /**
-     * removes the map
-     */
-    private void removeMap() {
-        if(map == null) {
-            System.out.println("You have not yet added a map.");
-            return;
-        }
-        swimmer.removeMap();
-        map = null;
-
+    private boolean logOut() {
+        System.out.println("Bye " + currentSwimmer.getUsername());
+        return false;
     }
 
     /**
@@ -522,6 +502,133 @@ public class MapDisplay {
      */
     public void close() {
         keyboard.close();
+    }
+
+    private void viewFeed() {
+        SwimmerPrinter printer = new SwimmerPrinter(currentSwimmer);
+        printer.showFeed();
+    }
+
+    private void followUser() {
+        System.out.println("Users in the system:");
+        int i = 0;
+        for(Swimmer swimmer : manager.getAllUsers()) {
+            if(!swimmer.getUsername().equals(currentSwimmer.getUsername())) {
+                System.out.println((i + 1) + swimmer.getUsername());
+            }
+        }
+        System.out.println("Enter the name of the user to follow: ");
+        String name = keyboard.nextLine();
+        Swimmer target = manager.loginUser(name);
+        if(target != null && !target.equals(currentSwimmer)) {
+            currentSwimmer.follow(target);
+            System.out.println("You have started following " + target.getUsername());
+        }
+        else {
+            System.out.println("Invalid user.");
+        }
+    }
+
+    private void findNewPath() {
+        System.out.println("Please choose what you want to use to find the path:");
+        System.out.println("1. My previous route only");
+        System.out.println("2. All routes in my feed");
+        int input = keyboard.nextInt();
+        keyboard.nextLine();
+
+        Set<Coordinates> allowedCoordinates = new HashSet<>();
+        ArrayList<Activity> source;
+        if (input == 1) {
+            source = currentSwimmer.getActivities();
+        }
+        else if(input == 2){
+            source = manager.getFeedFor(currentSwimmer);
+        }
+        else {
+            System.out.println("Invalid input.");
+            return;
+        }
+
+        for(Activity activity : source) {
+            allowedCoordinates.addAll(activity.getRoute().getPath());
+        }
+
+        if(allowedCoordinates.isEmpty()) {
+            System.out.println("No route has been added yet.");
+            return;
+        }
+
+        System.out.println("Enter the x-coordinate of the starting position: ");
+        int startX = keyboard.nextInt();
+        keyboard.nextLine();
+        System.out.println("Enter the y-coordinate of the starting position: ");
+        int startY = keyboard.nextInt();
+        keyboard.nextLine();
+        System.out.println("Enter the x-coordinate of the ending position: ");
+        int endX = keyboard.nextInt();
+        keyboard.nextLine();
+        System.out.println("Enter the y-coordinate of the ending position: ");
+        int endY = keyboard.nextInt();
+        keyboard.nextLine();
+
+        Coordinates startPosition = new Coordinates(startX, startY);
+        Coordinates endPosition = new Coordinates(endX, endY);
+        Route tempRoute = new Route(startPosition, endPosition);
+
+        PathFinder pathFinder = new PathFinder(tempRoute, manager.getWorldMap(), allowedCoordinates);
+        pathFinder.createPath(manager.getWorldMap().getGrid());
+
+        if(!tempRoute.getPath().isEmpty()) {
+            System.out.println("A path was found. The length of this path is " + tempRoute.getPath().size());
+            System.out.println("Would you like to save this route as a new activity?");
+            System.out.println("1. Yes\n2. No");
+            System.out.println("Please select the option by entering the number beside it.");
+            int choice = keyboard.nextInt();
+            keyboard.nextLine();
+
+            if(choice == 1) {
+                Activity.ActivityBuilder builder = new Activity.ActivityBuilder();
+
+                getActivityNameInput(builder);
+
+                builder.route(tempRoute);
+
+                try {
+                    Activity newActivity = builder.build();
+                    currentSwimmer.addActivity(newActivity);
+                    System.out.println("The activity " + newActivity.getActivityName() + "has been saved.");
+                }
+                catch(Exception e) {
+                    System.out.println("Error saving activity: " + e.getMessage());
+                }
+            }
+        }
+        else {
+            System.out.println("No path was found using the previous routes.");
+        }
+    }
+
+    private void addDuplicateActivity() {
+        ArrayList<Activity> myActivities = currentSwimmer.getActivities();
+        if(myActivities.isEmpty()) {
+            System.out.println("No previous activities.");
+            return;
+        }
+        for(int i = 0; i < myActivities.size(); i++) {
+            System.out.println((i+1) +  myActivities.get(i).getActivityName());
+        }
+        System.out.println("Select the route you would like to duplicate by entering the number beside it.");
+        int choice = keyboard.nextInt();
+        if(choice < 1 && choice >= myActivities.size()) {
+            System.out.println("Invalid input.");
+            return;
+        }
+        Activity duplicate = myActivities.get(choice - 1);
+        System.out.print("Enter the name of the new activity: ");
+        String activityName = keyboard.nextLine();
+        Activity newActivity = new Activity.ActivityBuilder().activityName(activityName).route(duplicate.getRoute()).build();
+        currentSwimmer.addActivity(newActivity);
+        System.out.println("the activity has been duplicated.");
     }
 
 }

@@ -2,7 +2,7 @@ package ca.umanitoba.comp2450.exercisetracker.model;
 
 import com.google.common.base.Preconditions;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Responsible for finding a path from a route's start position to its end position
@@ -14,10 +14,19 @@ public class PathFinder {
     private Route route;
     //The map on which the path is computed.
     private Map map;
+    private Set<Coordinates> allowedCoordinates;
 
     //defining the constructor
-    public PathFinder(Route route, Map map) {
+    public PathFinder(Route route, Map map, Set<Coordinates> allowedCoordinates) {
         //Two preconditions: The route and map being entered should not be null.
+        Preconditions.checkNotNull(route, "Route should not be null.");
+        Preconditions.checkNotNull(map, "Map should not be null.");
+        this.route = route;
+        this.map = map;
+        this.allowedCoordinates = allowedCoordinates;
+    }
+
+    public PathFinder(Route route, Map map) {
         Preconditions.checkNotNull(route, "Route should not be null.");
         Preconditions.checkNotNull(map, "Map should not be null.");
         this.route = route;
@@ -38,19 +47,17 @@ public class PathFinder {
         //creating a 2-D coordinates array to store which position has been reached in order to reconstruct the path after.
         Coordinates[][] parent = new Coordinates[height][width];
 
-        //Creating a list of positions ot explore
-        ArrayList<Coordinates> uncheckedNeighbours = new ArrayList<>();
-        uncheckedNeighbours.add(startPosition);
-        visited[startPosition.getY()][startPosition.getX()] = true;
+        Stack<Coordinates> validPositions = new LinkedListStack<>();
+        validPositions.push(startPosition);
 
         //creating 2 arrays to store the relative steps to move in 4 directions:right, left, down, up.
         int[] stepX = {1,-1,0,0};
         int[] stepY = {0,0,1,-1};
 
-        //Looping through the unexplored positions
-        while(!uncheckedNeighbours.isEmpty()) {
-            //Taking the next position to explore
-            Coordinates currentPos =  uncheckedNeighbours.remove(0);
+        while(!validPositions.isEmpty()) {
+            Coordinates currentPos = validPositions.pop();
+
+            visited[currentPos.getY()][currentPos.getX()] = true;
 
             //reconstucting the path and stopping if the end was reached
             if(currentPos.equals(endPosition)) {
@@ -66,10 +73,10 @@ public class PathFinder {
                 //checking if the position is valid
                 if(isValid(newX, newY, visited)) {
                     //marking the position being added as visited and recording how the cell was reached
-                    visited[newY][newX] = true;
-                    parent[newY][newX] = currentPos;
-                    //adding the cell to the 2-D coordinate array of unexplored positions
-                    uncheckedNeighbours.add(new Coordinates(newX, newY));
+                    if(parent[newY][newX] == null) {
+                        parent[newY][newX] = currentPos;
+                        validPositions.push(currentPos);
+                    }
                 }
             }
 
@@ -103,6 +110,13 @@ public class PathFinder {
             int obstacleHeight = obstacle.height();
 
             if(x >= obstacleX && x < obstacleX + obstacleWidth && y >= obstacleY && y < obstacleY + obstacleHeight) {
+                return false;
+            }
+        }
+
+        if (allowedCoordinates != null) {
+            Coordinates coordinate = new Coordinates(x,y);
+            if(!allowedCoordinates.contains(coordinate)) {
                 return false;
             }
         }

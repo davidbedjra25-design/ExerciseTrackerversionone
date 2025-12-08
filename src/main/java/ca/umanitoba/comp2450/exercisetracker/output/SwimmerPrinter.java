@@ -1,8 +1,9 @@
 package ca.umanitoba.comp2450.exercisetracker.output;
 
 import ca.umanitoba.comp2450.exercisetracker.gear.GearType;
+import ca.umanitoba.comp2450.exercisetracker.model.Activity;
 import ca.umanitoba.comp2450.exercisetracker.model.Swimmer;
-
+import java.util.*;
 /**
  * Responsible for displaying certain aspects of the swimmer class to the console.
  */
@@ -44,5 +45,19 @@ public class SwimmerPrinter {
     //defining a method to display the total distance the user has travelled
     public void showTotalDistance() {
         System.out.println("The total distance travelled is " + swimmer.getDistance());
+    }
+
+    public void showFeed() {
+        ArrayList<Activity> feed = swimmer.getFeed();
+        if(feed.isEmpty()) {
+            System.out.println("Your feed is empty.");
+        }
+        else {
+            System.out.println("Activity feed: ");
+            int i = 0;
+            for(Activity activity : feed) {
+                System.out.println((i + 1) + activity.getActivityName() + " (" + activity.getDistance());
+            }
+        }
     }
 }
