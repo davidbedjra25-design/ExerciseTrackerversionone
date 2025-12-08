@@ -3,6 +3,17 @@ package ca.umanitoba.comp2450.exercisetracker.model;
 import com.google.common.base.Preconditions;
 
 public class LinkedListStack<T> implements Stack<T> {
+
+    private class Node {
+        Node next;
+        T data;
+
+        public Node(T data) {
+            this.data = data;
+            this.next = null;
+        }
+    }
+
     private Node top;
     private int size;
 
@@ -91,13 +102,4 @@ public class LinkedListStack<T> implements Stack<T> {
         Preconditions.checkState(size >= 0, "Size cannot be negative.");
     }
 
-    private class Node {
-        Node next;
-        T data;
-
-        public Node(T data) {
-            this.data = data;
-            this.next = null;
-        }
-    }
 }
