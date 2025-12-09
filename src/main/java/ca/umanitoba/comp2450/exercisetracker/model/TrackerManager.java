@@ -4,6 +4,8 @@ import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
 import ca.umanitoba.comp2450.exercisetracker.model.map.WorldMap;
 import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Activity;
 import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Swimmer;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidSwimmerUsernameException;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.UserAlreadyExistsException;
 
 import java.util.ArrayList;
 
@@ -25,7 +27,7 @@ public class TrackerManager {
         return swimmer;
     }
 
-    public Swimmer registerUser(String username) throws Exception {
+    public Swimmer registerUser(String username) throws InvalidSwimmerUsernameException, UserAlreadyExistsException {
         Swimmer swimmer = userManager.register(username, worldMap.getWorldMap());
         this.currentSwimmer = swimmer;
         return swimmer;

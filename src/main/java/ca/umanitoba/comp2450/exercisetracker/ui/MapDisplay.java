@@ -8,6 +8,10 @@ import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Activity;
 import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Coordinates;
 import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Route;
 import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Swimmer;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidActivityNameException;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidCoordinateException;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidSwimmerUsernameException;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.UserAlreadyExistsException;
 import ca.umanitoba.comp2450.exercisetracker.output.MapPrinter;
 import ca.umanitoba.comp2450.exercisetracker.output.SwimmerPrinter;
 import com.google.common.base.Preconditions;
@@ -118,8 +122,11 @@ public class MapDisplay {
             currentSwimmer = manager.registerUser(username);
             System.out.println("You have successfully created a profile. You are now logged in.");
         }
-        catch(Exception e) {
+        catch(InvalidSwimmerUsernameException e) {
             System.out.println("Error creating profile: " + e.getMessage());
+        }
+        catch(UserAlreadyExistsException ue) {
+            System.out.println(ue.getMessage());
         }
     }
 
@@ -227,25 +234,29 @@ public class MapDisplay {
      */
     private void addObstacle() {
         Map map = manager.getWorldMap();
+        try {
+            System.out.println("Please, enter the x-coordinate of the obstacle:");
+            int x = keyboard.nextInt();
+            System.out.println("Please, enter the y-coordinate of the obstacle:");
+            int y = keyboard.nextInt();
+            System.out.println("Please, enter the width of the obstacle:");
+            int width = keyboard.nextInt();
+            System.out.println("Please, enter the height of the obstacle:");
+            int height = keyboard.nextInt();
+            keyboard.nextLine();
 
-        System.out.println("Please, enter the x-coordinate of the obstacle:");
-        int x = keyboard.nextInt();
-        System.out.println("Please, enter the y-coordinate of the obstacle:");
-        int y = keyboard.nextInt();
-        System.out.println("Please, enter the width of the obstacle:");
-        int width = keyboard.nextInt();
-        System.out.println("Please, enter the height of the obstacle:");
-        int height = keyboard.nextInt();
-        keyboard.nextLine();
-
-        if(x < 0 || y < 0 || (x + width) > map.getWidth() || (y + height) > map.getHeight()) {
-            System.out.println("The obstacle cannot fit inside the map.");
-            return;
+            if(x < 0 || y < 0 || (x + width) > map.getWidth() || (y + height) > map.getHeight()) {
+                System.out.println("The obstacle cannot fit inside the map.");
+                return;
+            }
+            Coordinates obstacleCoordinates = new Coordinates(x,y);
+            Obstacle obstacle = new Obstacle(obstacleCoordinates, width, height);
+            map.addObstacle(obstacle);
+            System.out.println("The obstacle has been added.");
         }
-        Coordinates obstacleCoordinates = new Coordinates(x,y);
-        Obstacle obstacle = new Obstacle(obstacleCoordinates, width, height);
-        map.addObstacle(obstacle);
-        System.out.println("The obstacle has been added.");
+        catch(InvalidCoordinateException ic) {
+            System.out.println("Error reading coordinates: " + ic.getMessage());
+        }
     }
 
     /**
@@ -257,15 +268,18 @@ public class MapDisplay {
         Activity tempActivity = createActivity();
         Route route = tempActivity.getRoute();
         PathFinder pathFinder = new PathFinder(route,map);
-        if(map.getGrid() != null) {
+        try {
             pathFinder.createPath(map.getGrid());
+            Activity finalActivity = new Activity.ActivityBuilder().activityName(tempActivity.getActivityName()).route(route).build();
+            currentSwimmer.addActivity(finalActivity);
+            System.out.println("You have added a new activity.");
         }
-        else {
-            pathFinder.createPath(map.getGrid());
+        catch(InvalidCoordinateException ic) {
+            System.out.println("Coordinate error: " + ic.getMessage());
         }
-        Activity finalActivity = new Activity.ActivityBuilder().activityName(tempActivity.getActivityName()).route(route).build();
-        currentSwimmer.addActivity(finalActivity);
-        System.out.println("You have added a new activity.");
+        catch(InvalidActivityNameException ae) {
+            System.out.println("Activity name error: " + ae.getMessage());
+        }
     }
 
     private Activity createActivity() {
@@ -291,8 +305,8 @@ public class MapDisplay {
             try {
                 builder.activityName(activityName);
             }
-            catch(Exception e) {
-                System.out.println("The names of activities must have at least one letter. E.g. Jack");
+            catch(InvalidActivityNameException e) {
+                System.out.println(e.getMessage());
                 activityName = null;
             }
         } while(activityName == null);
@@ -314,29 +328,36 @@ public class MapDisplay {
         int endPositionY = -1;
 
         do{
-            System.out.println("Please, enter the x-coordinate of the start position of the route:");
-            startPositionX = keyboard.nextInt();
-            System.out.println("Please, enter the y-coordinate of the start position of the route:");
-            startPositionY = keyboard.nextInt();
+            try {
+                System.out.println("Please, enter the x-coordinate of the start position of the route:");
+                startPositionX = keyboard.nextInt();
+                System.out.println("Please, enter the y-coordinate of the start position of the route:");
+                startPositionY = keyboard.nextInt();
 
-            System.out.println("Please, enter the x-coordinate of the end position of the route:");
-            endPositionX = keyboard.nextInt();
-            System.out.println("Please, enter the y-coordinate of the end position of the route:");
-            endPositionY = keyboard.nextInt();
+                System.out.println("Please, enter the x-coordinate of the end position of the route:");
+                endPositionX = keyboard.nextInt();
+                System.out.println("Please, enter the y-coordinate of the end position of the route:");
+                endPositionY = keyboard.nextInt();
 
-            if(isInObstacle(startPositionX, startPositionY)) {
-                System.out.println("Start position is inside an obstacle. Choose another location.");
-                continue;
+                if(isInObstacle(startPositionX, startPositionY)) {
+                    System.out.println("Start position is inside an obstacle. Choose another location.");
+                    continue;
+                }
+
+                if(isInObstacle(endPositionX, endPositionY)) {
+                    System.out.println("End position is inside an obstacle. Choose another location.");
+                    continue;
+                }
+                Coordinates startPosition = new Coordinates(startPositionX, startPositionY);
+                Coordinates endPosition = new Coordinates(endPositionX, endPositionY);
+                route = new Route(startPosition, endPosition);
+                builder.route(route);
             }
 
-            if(isInObstacle(endPositionX, endPositionY)) {
-                System.out.println("End position is inside an obstacle. Choose another location.");
-                continue;
+            catch(InvalidCoordinateException ic) {
+                System.out.println(ic.getMessage());
             }
-            Coordinates startPosition = new Coordinates(startPositionX, startPositionY);
-            Coordinates endPosition = new Coordinates(endPositionX, endPositionY);
-            route = new Route(startPosition, endPosition);
-            builder.route(route);
+
         } while(startPositionX < 0 ||  startPositionY < 0 || endPositionX < 0 || endPositionY < 0 || startPositionX >= map.getWidth() ||  startPositionY >= map.getHeight() || endPositionX >= map.getWidth() || endPositionY >= map.getHeight());
 
         Preconditions.checkNotNull(route, "Route should not be null.");
@@ -564,55 +585,54 @@ public class MapDisplay {
             System.out.println("No route has been added yet.");
             return;
         }
-
-        System.out.println("Enter the x-coordinate of the starting position: ");
-        int startX = keyboard.nextInt();
-        keyboard.nextLine();
-        System.out.println("Enter the y-coordinate of the starting position: ");
-        int startY = keyboard.nextInt();
-        keyboard.nextLine();
-        System.out.println("Enter the x-coordinate of the ending position: ");
-        int endX = keyboard.nextInt();
-        keyboard.nextLine();
-        System.out.println("Enter the y-coordinate of the ending position: ");
-        int endY = keyboard.nextInt();
-        keyboard.nextLine();
-
-        Coordinates startPosition = new Coordinates(startX, startY);
-        Coordinates endPosition = new Coordinates(endX, endY);
-        Route tempRoute = new Route(startPosition, endPosition);
-
-        PathFinder pathFinder = new PathFinder(tempRoute, manager.getWorldMap(), allowedCoordinates);
-        pathFinder.createPath(manager.getWorldMap().getGrid());
-
-        if(!tempRoute.getPath().isEmpty()) {
-            System.out.println("A path was found. The length of this path is " + tempRoute.getPath().size());
-            System.out.println("Would you like to save this route as a new activity?");
-            System.out.println("1. Yes\n2. No");
-            System.out.println("Please select the option by entering the number beside it.");
-            int choice = keyboard.nextInt();
+        try {
+            System.out.println("Enter the x-coordinate of the starting position: ");
+            int startX = keyboard.nextInt();
+            keyboard.nextLine();
+            System.out.println("Enter the y-coordinate of the starting position: ");
+            int startY = keyboard.nextInt();
+            keyboard.nextLine();
+            System.out.println("Enter the x-coordinate of the ending position: ");
+            int endX = keyboard.nextInt();
+            keyboard.nextLine();
+            System.out.println("Enter the y-coordinate of the ending position: ");
+            int endY = keyboard.nextInt();
             keyboard.nextLine();
 
-            if(choice == 1) {
-                Activity.ActivityBuilder builder = new Activity.ActivityBuilder();
+            Coordinates startPosition = new Coordinates(startX, startY);
+            Coordinates endPosition = new Coordinates(endX, endY);
+            Route tempRoute = new Route(startPosition, endPosition);
 
-                getActivityNameInput(builder);
+            PathFinder pathFinder = new PathFinder(tempRoute, manager.getWorldMap(), allowedCoordinates);
+            pathFinder.createPath(manager.getWorldMap().getGrid());
 
-                builder.route(tempRoute);
+            if (!tempRoute.getPath().isEmpty()) {
+                System.out.println("A path was found. The length of this path is " + tempRoute.getPath().size());
+                System.out.println("Would you like to save this route as a new activity?");
+                System.out.println("1. Yes\n2. No");
+                System.out.println("Please select the option by entering the number beside it.");
+                int choice = keyboard.nextInt();
+                keyboard.nextLine();
 
-                try {
+                if (choice == 1) {
+                    Activity.ActivityBuilder builder = new Activity.ActivityBuilder();
+
+                    getActivityNameInput(builder);
+
+                    builder.route(tempRoute);
+
                     Activity newActivity = builder.build();
                     currentSwimmer.addActivity(newActivity);
                     System.out.println("The activity " + newActivity.getActivityName() + "has been saved.");
-                }
-                catch(Exception e) {
-                    System.out.println("Error saving activity: " + e.getMessage());
+                } else {
+                    System.out.println("No path was found using the previous routes.");
                 }
             }
         }
-        else {
-            System.out.println("No path was found using the previous routes.");
+        catch(InvalidCoordinateException ic) {
+            System.out.println("Coordinate error: " + ic.getMessage());
         }
+
     }
 
     private void addDuplicateActivity() {
@@ -633,9 +653,15 @@ public class MapDisplay {
         Activity duplicate = myActivities.get(choice - 1);
         System.out.print("Enter the name of the new activity: ");
         String activityName = keyboard.nextLine();
-        Activity newActivity = new Activity.ActivityBuilder().activityName(activityName).route(duplicate.getRoute()).build();
-        currentSwimmer.addActivity(newActivity);
-        System.out.println("the activity has been duplicated.");
+        try {
+            Activity newActivity = new Activity.ActivityBuilder().activityName(activityName).route(duplicate.getRoute()).build();
+            currentSwimmer.addActivity(newActivity);
+            System.out.println("the activity has been duplicated.");
+        }
+        catch(InvalidActivityNameException is) {
+            System.out.println(is.getMessage());
+        }
+
     }
 
 }
