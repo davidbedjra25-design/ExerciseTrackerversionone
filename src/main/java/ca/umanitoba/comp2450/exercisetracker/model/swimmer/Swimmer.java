@@ -1,6 +1,7 @@
-package ca.umanitoba.comp2450.exercisetracker.model;
+package ca.umanitoba.comp2450.exercisetracker.model.swimmer;
 
 import ca.umanitoba.comp2450.exercisetracker.gear.GearType;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidSwimmerUsernameException;
 import com.google.common.base.Preconditions;
 
 import java.util.*;
@@ -17,10 +18,7 @@ public class Swimmer {
     private Set<Swimmer> following;
 
     //Defining our constructor
-    private Swimmer(String username) {
-        //Two preconditions: The username should not be null and have at least one character.
-        Preconditions.checkNotNull(username,"Username should not be null.");
-        Preconditions.checkState(!username.isEmpty(),"Username should have at least one character.");
+    private Swimmer(String username)  {
         this.username = username;
         this.gears = new HashSet<>();
         this.activities = new ArrayList<>();
@@ -130,10 +128,11 @@ public class Swimmer {
         private String username;
         public SwimmerBuilder() {}
 
-        public SwimmerBuilder username(String username) throws Exception {
-            Preconditions.checkNotNull(username, "Username should not be null.");
+        public SwimmerBuilder username(String username) throws InvalidSwimmerUsernameException {
+            //One precondition: The username should not be null.
+            Preconditions.checkNotNull(username,"Username should not be null.");
             if(username.isEmpty()) {
-                throw new Exception("Invalid username");
+                throw new InvalidSwimmerUsernameException();
             }
             this.username = username;
             return this;

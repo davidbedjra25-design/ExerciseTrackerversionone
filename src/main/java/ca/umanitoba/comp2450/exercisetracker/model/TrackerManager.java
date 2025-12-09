@@ -1,5 +1,10 @@
 package ca.umanitoba.comp2450.exercisetracker.model;
 
+import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.map.WorldMap;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Activity;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Swimmer;
+
 import java.util.ArrayList;
 
 public class TrackerManager {

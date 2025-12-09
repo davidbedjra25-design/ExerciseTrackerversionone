@@ -1,5 +1,6 @@
-package ca.umanitoba.comp2450.exercisetracker.model;
+package ca.umanitoba.comp2450.exercisetracker.model.map;
 
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Coordinates;
 import com.google.common.base.Preconditions;
 
 /**

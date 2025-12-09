@@ -1,5 +1,6 @@
-package ca.umanitoba.comp2450.exercisetracker.model;
+package ca.umanitoba.comp2450.exercisetracker.model.swimmer;
 
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidCoordinateException;
 import com.google.common.base.Preconditions;
 
 /**
@@ -10,7 +11,13 @@ public class Coordinates {
     private final int y;//y coordinate
 
     //defining our constructor
-    public Coordinates(int x, int y){
+    public Coordinates(int x, int y) throws InvalidCoordinateException {
+        if(x < 0) {
+            throw new InvalidCoordinateException("The x-coordinate cannot be negative: " + x);
+        }
+        if(y < 0) {
+            throw new InvalidCoordinateException("The y-coordinate cannot be negative: " + y);
+        }
         //initializing our instance variables
         this.x = x;
         this.y = y;

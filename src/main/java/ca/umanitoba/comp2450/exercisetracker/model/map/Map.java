@@ -1,4 +1,4 @@
-package ca.umanitoba.comp2450.exercisetracker.model;
+package ca.umanitoba.comp2450.exercisetracker.model.map;
 
 import com.google.common.base.Preconditions;
 

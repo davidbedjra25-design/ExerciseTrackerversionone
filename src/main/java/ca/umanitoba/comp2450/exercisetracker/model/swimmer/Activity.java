@@ -1,5 +1,6 @@
-package ca.umanitoba.comp2450.exercisetracker.model;
+package ca.umanitoba.comp2450.exercisetracker.model.swimmer;
 
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidActivityNameException;
 import com.google.common.base.Preconditions;
 
 /**
@@ -62,8 +63,11 @@ public class Activity {
                 return this;
             }
 
-            public  ActivityBuilder  activityName(String activityName) {
+            public  ActivityBuilder  activityName(String activityName) throws InvalidActivityNameException {
                 Preconditions.checkNotNull(activityName, "activityName should not be null.");
+                if(activityName.isEmpty()) {
+                    throw new InvalidActivityNameException();
+                }
                 this.activityName = activityName;
 
                 return this;

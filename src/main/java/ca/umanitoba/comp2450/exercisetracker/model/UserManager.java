@@ -1,5 +1,7 @@
 package ca.umanitoba.comp2450.exercisetracker.model;
 
+import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Swimmer;
 import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
@@ -20,7 +22,6 @@ public class UserManager {
         }
 
         Swimmer swimmer = new Swimmer.SwimmerBuilder().username(username).build();
-        swimmer.addMap(worldMap);
 
         users.add(swimmer);
         return swimmer;

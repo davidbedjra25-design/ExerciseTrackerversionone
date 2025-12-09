@@ -1,5 +1,10 @@
 package ca.umanitoba.comp2450.exercisetracker.model;
 
+import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.map.Obstacle;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Coordinates;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Route;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.exceptions.InvalidCoordinateException;
 import com.google.common.base.Preconditions;
 
 import java.util.*;
@@ -13,11 +18,11 @@ public class PathFinder {
     //The route whose path will be computed and filled in.
     private Route route;
     //The map on which the path is computed.
-    private Map map;
-    private Set<Coordinates> allowedCoordinates;
+    private ca.umanitoba.comp2450.exercisetracker.model.map.Map map;
+    private List<Coordinates> allowedCoordinates;
 
     //defining the constructor
-    public PathFinder(Route route, Map map, Set<Coordinates> allowedCoordinates) {
+    public PathFinder(Route route, ca.umanitoba.comp2450.exercisetracker.model.map.Map map, List<Coordinates> allowedCoordinates) {
         //Two preconditions: The route and map being entered should not be null.
         Preconditions.checkNotNull(route, "Route should not be null.");
         Preconditions.checkNotNull(map, "Map should not be null.");
@@ -34,7 +39,7 @@ public class PathFinder {
     }
 
     //defining a method to find the path from a route's start position to its end position on a map grid, avoiding obstacles in the process
-    public void createPath(char[][] grid) {
+    public void createPath(char[][] grid) throws InvalidCoordinateException {
         //creating variables to keep track of the map's width and height
         int width = map.getWidth();
         int height = map.getHeight();
@@ -74,8 +79,9 @@ public class PathFinder {
                 if(isValid(newX, newY, visited)) {
                     //marking the position being added as visited and recording how the cell was reached
                     if(parent[newY][newX] == null) {
+                        Coordinates neighbour = new Coordinates(newX, newY);
                         parent[newY][newX] = currentPos;
-                        validPositions.push(currentPos);
+                        validPositions.push(neighbour);
                     }
                 }
             }
@@ -91,7 +97,7 @@ public class PathFinder {
      * @param visited array containing explored positions
      * @return true if the position is inside the map, not yet visited, and not in any obstacle, false otherwise
      */
-    private boolean isValid(int x, int y, boolean[][] visited) {
+    private boolean isValid(int x, int y, boolean[][] visited) throws InvalidCoordinateException {
         //checking if the position is out-of-bounds
         if(x < 0 || x >= map.getWidth() || y < 0 || y >= map.getHeight()) {
             return false;

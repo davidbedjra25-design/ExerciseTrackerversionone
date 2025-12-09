@@ -2,7 +2,12 @@ package ca.umanitoba.comp2450.exercisetracker.ui;
 
 import ca.umanitoba.comp2450.exercisetracker.gear.GearType;
 import ca.umanitoba.comp2450.exercisetracker.model.*;
-import ca.umanitoba.comp2450.exercisetracker.model.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.map.Obstacle;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Activity;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Coordinates;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Route;
+import ca.umanitoba.comp2450.exercisetracker.model.swimmer.Swimmer;
 import ca.umanitoba.comp2450.exercisetracker.output.MapPrinter;
 import ca.umanitoba.comp2450.exercisetracker.output.SwimmerPrinter;
 import com.google.common.base.Preconditions;
@@ -507,7 +512,8 @@ public class MapDisplay {
 
     private void viewFeed() {
         SwimmerPrinter printer = new SwimmerPrinter(currentSwimmer);
-        printer.showFeed();
+        ArrayList<Activity> feed = manager.getFeedFor(currentSwimmer);
+        printer.showFeed(feed);
     }
 
     private void followUser() {
@@ -537,7 +543,7 @@ public class MapDisplay {
         int input = keyboard.nextInt();
         keyboard.nextLine();
 
-        Set<Coordinates> allowedCoordinates = new HashSet<>();
+        ArrayList<Coordinates> allowedCoordinates = new ArrayList<>();
         ArrayList<Activity> source;
         if (input == 1) {
             source = currentSwimmer.getActivities();

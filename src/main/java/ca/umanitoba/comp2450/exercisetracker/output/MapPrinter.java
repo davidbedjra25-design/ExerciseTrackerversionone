@@ -1,9 +1,7 @@
 package ca.umanitoba.comp2450.exercisetracker.output;
 
-import ca.umanitoba.comp2450.exercisetracker.model.Map;
+import ca.umanitoba.comp2450.exercisetracker.model.map.Map;
 import com.google.common.base.Preconditions;
-
-import java.util.*;
 
 /**
  * Responsible for printing certain aspects of the map to the user
